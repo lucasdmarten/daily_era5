@@ -49,8 +49,8 @@ def get_href(time, driver, url, _id="p-button-text p-c"):
     for tag in tags:
         if 'Download' in tag.text:
             href = tag.get_attribute('href')
+            log.info(f'[{time}] - app.helpers.get_href() @ href: {href}')
             return href
-    log.info(f'[{time}] - app.helpers.get_href() @ href: {href}')
     if not href:
         raise Exception('not url')
     

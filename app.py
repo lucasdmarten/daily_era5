@@ -9,6 +9,8 @@ from selenium.webdriver.firefox.options import Options
 from helpers import login, make_url, get_href, get_request
 
 import logging as log
+import multiprocessing
+
 
 log.basicConfig(format='%(message)s', level=log.INFO)
 TIMES = date_range('1979-01-01T00:00:00', '2022-01-01T00:00:00', freq='1M')
@@ -32,11 +34,8 @@ cfg = {
     },
 }
 
-if __name__ == "__main__":
-    log.info(f'[ START SCRIPT ] - app.py')
-    user=''
-    pasw=''
 
+def main(cfg):
     for variable, infos in cfg.items():
         for level in infos['levels']:
             for year in infos['years']:
@@ -64,3 +63,19 @@ if __name__ == "__main__":
                     else:
                         log.info(f'[{time}] - app.main() @ FILE ALREADY DOWNLOADED: {file_out}')
                     log.info(f'[{time}] - app.main() @ DONE {level}.{variable}.{year}.{month} in {datetime.now()-t1} seconds.')
+
+
+
+if __name__ == "__main__":
+    log.info(f'[ START SCRIPT ] - app.py')
+    user=''
+    pasw=''
+    
+    list_args = list()
+    for i in range(len(cfg)):
+        list_args.append((cfg, ))
+        #main(dflatitude[i], dflongitude[i], dfcity[i], dfgeocode[i])
+    with multiprocessing.Pool(processes=8) as pool:
+        results = pool.starmap(main, list_args)
+
+    
