@@ -1,19 +1,19 @@
 import os
+from time import sleep
 from pandas import date_range
 from datetime import datetime
+from tqdm import tqdm
+import logging as log
 
 from selenium import webdriver
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
 
 from helpers import login, make_url, get_href, get_request
 
-import logging as log
-import multiprocessing
 
 
 log.basicConfig(format='%(message)s', level=log.INFO)
 TIMES = date_range('1979-01-01T00:00:00', '2022-01-01T00:00:00', freq='1M')
+BASE_DIR = os.path.dirname(__file__)
 
 cfg = {
     "specific_humidity": {
@@ -35,34 +35,35 @@ cfg = {
 }
 
 
-def main(cfg):
-    for variable, infos in cfg.items():
-        for level in infos['levels']:
-            for year in infos['years']:
-                for month in infos['months']:
-                    t1 = datetime.now()
-                    time = datetime.strptime(f"{year}{month}", "%Y%m")
-                    file_out = f"/home/marten/Desktop/download_era5_daily/src/{variable}/{time.strftime('%Y/%m')}/{level}_{variable}_{time.strftime('%Y%j')}.nc"
-                    if not os.path.isfile(file_out):
-                        options = Options()
-                        options.add_argument('-headless')
+def main(variable, infos):
 
-                        driver = webdriver.Firefox(options=options)
-                        os.makedirs(os.path.dirname(file_out), exist_ok=True)
-                        try:
-                            login(driver, user, pasw)
-                        except:
-                            log.info(f'[{time}] - app.helpers.login() @ already logged, skip to download')
+    for level in infos['levels']:
+        for year in tqdm(infos['years']):
+            for month in infos['months']:
+                t1 = datetime.now()
+                itime = datetime.strptime(f"{year}{month}", "%Y%m")
+                file_out = f"{BASE_DIR}/{variable}/{itime.strftime('%Y/%m')}/{level}_{variable}_{itime.strftime('%Y%j')}.nc"
+                if not os.path.isfile(file_out):
+                    #options = Options()
+                    #options.add_argument('-headless')
 
-                        url = make_url(variable, level, year, month)
-                        href = get_href(time, driver, url, _id="p-button-text p-c")
-                        t2 = datetime.now()
-                        get_request(time, href, file_out)
-                        log.info(f"[{time}] - app.main() @ FILE DOWNLOADED in {datetime.now()-t2} seconds: {file_out}")
-                        driver.close()
-                    else:
-                        log.info(f'[{time}] - app.main() @ FILE ALREADY DOWNLOADED: {file_out}')
-                    log.info(f'[{time}] - app.main() @ DONE {level}.{variable}.{year}.{month} in {datetime.now()-t1} seconds.')
+                    driver = webdriver.Firefox()#options=options)
+                    os.makedirs(os.path.dirname(file_out), exist_ok=True)
+                    try:
+                        login(driver, user, pasw)
+                    except:
+                        log.info(f'[{datetime.now()}] - app.helpers.login() @ already logged, skip to download')
+
+                    url = make_url(variable, level, year, month)
+                    href = get_href(itime, driver, url, _id="p-button-text p-c")
+                    driver.close()
+                    
+                    t2 = datetime.now()
+                    get_request(itime, href, file_out)
+                    log.info(f"[{datetime.now()}] - app.main() @ FILE DOWNLOADED in {datetime.now()-t2} seconds: {file_out}")
+                else:
+                    log.info(f'[{datetime.now()}] - app.main() @ FILE ALREADY DOWNLOADED: {file_out}')
+                log.info(f'[{datetime.now()}] - app.main() @ DONE {level}.{variable}.{year}.{month} in {datetime.now()-t1} seconds.')
 
 
 
@@ -71,11 +72,9 @@ if __name__ == "__main__":
     user=''
     pasw=''
     
-    list_args = list()
-    for i in range(len(cfg)):
-        list_args.append((cfg, ))
-        #main(dflatitude[i], dflongitude[i], dfcity[i], dfgeocode[i])
-    with multiprocessing.Pool(processes=8) as pool:
-        results = pool.starmap(main, list_args)
+    #list_args = [(variable, infos) for variable, infos in cfg.items()]
+    #with multiprocessing.Pool(processes=3) as pool:
+    #    results = pool.starmap(main, list_args)
 
-    
+    for variable, infos in cfg.items():
+        main(variable, infos)

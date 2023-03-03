@@ -1,5 +1,6 @@
 import os, sys, requests
 from time import sleep
+from datetime import datetime
 from selenium.webdriver.common.by import By
 
 import logging as log
@@ -33,27 +34,48 @@ def login(driver, user='', pasw=''):
     driver.get(url)
     select_input(driver, 'edit-name', user)
     select_input(driver, 'edit-pass', pasw)
-    sleep(1.5)
+    #sleep(3)
     driver.find_element(By.ID, 'edit-submit').click()
-    
-    
+
+
 def get_href(time, driver, url, _id="p-button-text p-c"):
+    n_retrys = 100000
     driver.get(url)
-    sleep(5)
-    btns = driver.find_elements(By.TAG_NAME, 'button')
-    for button in btns:
-        if button.text == 'Run':
-            button.click()
-    sleep(5)
-    tags = driver.find_elements(By.TAG_NAME, 'a')
-    for tag in tags:
-        if 'Download' in tag.text:
-            href = tag.get_attribute('href')
-            log.info(f'[{time}] - app.helpers.get_href() @ href: {href}')
-            return href
-    if not href:
-        raise Exception('not url')
+    is_button = None
+    count = 0
+    while is_button == None:
+        sleep(1.5)
+        btns = driver.find_elements(By.TAG_NAME, 'button')
+        for i, button in enumerate(btns):
+            #print(f"{i}.{button.text}")
+            if button.text == 'Run':
+                is_button = True
+                button.click()
+            count += 1
+        log.info(f'[{datetime.now()}] - app.helpers.is_download() @ waiting for button of download, retry number: {count}')
+        if count >= n_retrys:
+            raise Exception('try many times rule is_button and does not work')
+        
     
+    is_download = None
+    count = 0
+    while is_download == None:
+        sleep(3)
+        tags = driver.find_elements(By.TAG_NAME, 'a')
+        for i, tag in enumerate(tags):
+            #print(f"{i}.{tag.text}")
+            if 'Download' in tag.text:
+                is_download = True
+                href = tag.get_attribute('href')
+                log.info(f'[{time}] - app.helpers.get_href() @ href: {href}')
+                return href
+            count += 1
+        button.click()
+        log.info(f'[{datetime.now()}] - app.helpers.is_download() @ waiting for button2 of download, retry number: {count}')
+        if count >= n_retrys:
+            raise Exception('try many times rule is_download and does not work')
+
+
 def get_request(time, url, file_out):
     log.info(f'[{time}] - app.helpers.get_request() @ starting request')
     response = requests.get(url)
