@@ -1,5 +1,3 @@
-"""ERA5_daily_statistics_uwind.py: baixa os dados de vento zonal em 850 hPa do ERAA5"""
-
 __author__      = "Lucas Marten"
 __copyright__   = "Copyright 2023, myhome"
 __email__       = "lucasdmarten@gmail.com"
